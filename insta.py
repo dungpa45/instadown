@@ -45,6 +45,21 @@ def download_image(url, file_path):
         print(f"Error downloading {url}: {e}")
         return False
 
+def download_video(url, file_path):
+    """Download and save a video with error handling"""
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=30, stream=True)
+        response.raise_for_status()
+
+        with open(file_path, "wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        
+        return True
+    except Exception as e:
+        print(f"Error downloading {url}: {e}")
+        return False
+
 def get_instagram_data(url):
     """Make API request with error handling"""
     try:
@@ -71,6 +86,7 @@ def main(ig_user_name, output_dir=None):
     has_next_page = True
     total_downloaded = 0
     page_count = 0
+    video_downloaded = 0
     
     while has_next_page:
         # Build URL with proper encoding
@@ -115,17 +131,16 @@ def main(ig_user_name, output_dir=None):
             if node['carousel_media']:
                 print(f"Carousel detected, downloading {len(node['carousel_media'])} images")
                 for child_node in node['carousel_media']:
-                    if not child_node['video_dash_manifest']:
+                    if not child_node['video_versions']:
                         image_url = child_node['image_versions2']['candidates'][0]['url']
                         filename = f"{child_node['id']}.jpg"
-                        print(filename)
                         file_path = os.path.join(download_dir, filename)
                         
                         if download_image(image_url, file_path):
                             page_downloaded += 1
                             total_downloaded += 1
             # Single image post
-            elif not node['video_dash_manifest']:
+            elif not node['video_versions']:
                 print("Single image detected")
                 image_url = node['image_versions2']['candidates'][0]['url']
                 filename = f"{node['id']}.jpg"
@@ -135,9 +150,18 @@ def main(ig_user_name, output_dir=None):
                     page_downloaded += 1
                     total_downloaded += 1
             
-            
+            elif node['video_versions']:
+                print("Video detected, let downloads the video")
+                video_url = node['video_versions'][0]['url']
+                filename = video_url.split('fbcdn.net/')[1].split('.mp4')[0].replace("/","_")
+                file_path = os.path.join(download_dir, f"{filename}.mp4")
+
+                if download_video(video_url, file_path):
+                    page_downloaded += 1
+                    total_downloaded += 1
+                    video_downloaded += 1
         
-        print(f"Page {page_count + 1}: Downloaded {page_downloaded} images")
+        print(f"Page {page_count + 1}: Downloaded {page_downloaded} images and {video_downloaded} videos")
         page_count += 1
         
         # Break if no more pages
