@@ -135,7 +135,9 @@ def main(ig_user_name, output_dir=None):
                         image_url = child_node['image_versions2']['candidates'][0]['url']
                         filename = f"{child_node['id']}.jpg"
                         file_path = os.path.join(download_dir, filename)
-                        
+                        if os.path.exists(file_path):
+                            print(f"File already exists: {file_path}")
+                            continue
                         if download_image(image_url, file_path):
                             page_downloaded += 1
                             total_downloaded += 1
@@ -145,7 +147,9 @@ def main(ig_user_name, output_dir=None):
                 image_url = node['image_versions2']['candidates'][0]['url']
                 filename = f"{node['id']}.jpg"
                 file_path = os.path.join(download_dir, filename)
-                
+                if os.path.exists(file_path):
+                    print(f"File already exists: {file_path}")
+                    continue
                 if download_image(image_url, file_path):
                     page_downloaded += 1
                     total_downloaded += 1
@@ -155,7 +159,9 @@ def main(ig_user_name, output_dir=None):
                 video_url = node['video_versions'][0]['url']
                 filename = video_url.split('fbcdn.net/')[1].split('.mp4')[0].replace("/","_")
                 file_path = os.path.join(download_dir, f"{filename}.mp4")
-
+                if os.path.exists(file_path):
+                    print(f"File already exists: {file_path}")
+                    continue
                 if download_video(video_url, file_path):
                     page_downloaded += 1
                     total_downloaded += 1
