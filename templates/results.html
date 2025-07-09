@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Instagram Media Downloader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        h1 {
+            color: #405DE6;
+        }
+        .btn {
+            background: linear-gradient(45deg, #405DE6, #5851DB);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .results-info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #555;
+        }
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 24px;
+        }
+        .media-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .media-label {
+            display: block;
+            cursor: pointer;
+            position: relative;
+            width: 100%;
+        }
+        .thumb-container {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #f3f3f3;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .media-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: box-shadow 0.2s, filter 0.2s;
+            display: block;
+        }
+        .media-checkbox:checked + .thumb-container .media-thumb {
+            box-shadow: 0 0 0 4px #405DE6;
+            filter: brightness(0.85);
+        }
+        .checkmark {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #405DE6;
+            color: #fff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 22px;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            box-shadow: 0 2px 6px rgba(64,93,230,0.12);
+        }
+        .media-checkbox:checked ~ .checkmark {
+            display: flex;
+        }
+        .media-checkbox:checked + .thumb-container {
+            box-shadow: 0 0 0 4px #405DE6;
+        }
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: rgba(255,255,255,0.8);
+            pointer-events: none;
+        }
+        .download-link {
+            display: block;
+            margin-top: 8px;
+            text-align: center;
+            color: #fff;
+            background: #405DE6;
+            border-radius: 4px;
+            padding: 6px 0;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(64,93,230,0.08);
+            transition: background 0.2s;
+            width: 100%;
+        }
+        .download-link:hover {
+            background: #2d3fa6;
+        }
+        .zip-btn {
+            display: inline-block;
+            margin: 20px 0 30px 0;
+            padding: 10px 24px;
+            background: #833AB4;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .zip-btn:hover {
+            background: #405DE6;
+        }
+        .select-btns {
+            margin-bottom: 18px;
+            display: flex;
+            gap: 10px;
+        }
+        .select-btn {
+            background: #5851DB;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .select-btn:hover {
+            background: #405DE6;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
+        .media-checkbox {
+            position: absolute;
+            left: -9999px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Downloaded Media</h1>
+            <a href="/" class="btn">Back to Search</a>
+        </header>
+        <div class="results-info">
+            Found {{ total_items|default(0) }} media items
+        </div>
+        {% if total_pages is defined and total_pages|default(1) > 1 %}
+        <nav class="pagination" style="text-align:center;margin-bottom:20px;">
+            {% if page|default(1) > 1 %}
+                <a href="{{ url_for('results', page=page|default(1)-1) }}" class="btn">&laquo; Previous</a>
+            {% endif %}
+            {% for p in range(1, (total_pages|default(1))+1) %}
+                {% if p == page|default(1) %}
+                    <span style="margin:0 6px;font-weight:bold;color:#405DE6;">{{ p }}</span>
+                {% else %}
+                    <a href="{{ url_for('results', page=p) }}" class="btn" style="background:#eee;color:#405DE6;">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page|default(1) < total_pages|default(1) %}
+                <a href="{{ url_for('results', page=page|default(1)+1) }}" class="btn">Next &raquo;</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        <form method="POST" action="{{ url_for('download_zip') }}">
+        <div class="select-btns">
+            <button type="button" class="select-btn" id="toggleAllBtn" onclick="toggleSelect('all')">Select All</button>
+            <button type="button" class="select-btn" id="toggleImagesBtn" onclick="toggleSelect('image')">Select All Images</button>
+        </div>
+        {% set images = media_items|selectattr('type', 'equalto', 'image')|list %}
+        {% set videos = media_items|selectattr('type', 'equalto', 'video')|list %}
+        <h2>Images</h2>
+        {% if images %}
+        <div class="media-grid">
+            {% for item in images %}
+            <div class="media-item">
+                <label class="media-label">
+                    <input type="checkbox" class="media-checkbox image-checkbox" name="selected_files" value="{{ item.original }}">
+                    <span class="thumb-container">
+                        <img class="media-thumb" src="{{ url_for('media_file', filename=item.thumb) }}" alt="Instagram image thumbnail" loading="lazy">
+                    </span>
+                    <span class="checkmark">&#10003;</span>
+                </label>
+                <a class="download-link" href="{{ url_for('media_file', filename=item.original) }}" download>Download</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div>📷</div>
+            <h3>No images found</h3>
+        </div>
+        {% endif %}
+        <h2 style="margin-top:40px">Videos</h2>
+        <div class="select-btns">
+            <button type="button" class="select-btn" id="toggleVideosBtn" onclick="toggleSelect('video')">Select All Videos</button>
+        </div>
+        {% if videos %}
+        <div class="media-grid">
+            {% for item in videos %}
+            <div class="media-item">
+                <label class="media-label">
+                    <input type="checkbox" class="media-checkbox video-checkbox" name="selected_files" value="{{ item.original }}">
+                    <span class="thumb-container">
+                        <img class="media-thumb" src="{{ url_for('media_file', filename=item.thumb) }}" alt="Instagram video thumbnail" loading="lazy">
+                        <span class="play-icon">&#9658;</span>
+                    </span>
+                    <span class="checkmark">&#10003;</span>
+                </label>
+                <a class="download-link" href="{{ url_for('media_file', filename=item.original) }}" download>Download Video</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div>🎬</div>
+            <h3>No videos found</h3>
+        </div>
+        {% endif %}
+        <button type="submit" class="zip-btn">Download Selected as ZIP</button>
+        </form>
+        {% if total_pages is defined and total_pages|default(1) > 1 %}
+        <nav class="pagination" style="text-align:center;margin-top:30px;">
+            {% if page|default(1) > 1 %}
+                <a href="{{ url_for('results', page=page|default(1)-1) }}" class="btn">&laquo; Previous</a>
+            {% endif %}
+            {% for p in range(1, (total_pages|default(1))+1) %}
+                {% if p == page|default(1) %}
+                    <span style="margin:0 6px;font-weight:bold;color:#405DE6;">{{ p }}</span>
+                {% else %}
+                    <a href="{{ url_for('results', page=p) }}" class="btn" style="background:#eee;color:#405DE6;">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page|default(1) < total_pages|default(1) %}
+                <a href="{{ url_for('results', page=page|default(1)+1) }}" class="btn">Next &raquo;</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        <footer>
+            <p>Note: Thumbnails are low-quality previews. Click download for the original file.</p>
+        </footer>
+    </div>
+    <script>
+    function toggleSelect(type) {
+        let checkboxes, btn, allChecked;
+        if (type === 'all') {
+            checkboxes = document.querySelectorAll('.media-checkbox');
+            btn = document.getElementById('toggleAllBtn');
+        } else if (type === 'image') {
+            checkboxes = document.querySelectorAll('.image-checkbox');
+            btn = document.getElementById('toggleImagesBtn');
+        } else if (type === 'video') {
+            checkboxes = document.querySelectorAll('.video-checkbox');
+            btn = document.getElementById('toggleVideosBtn');
+        }
+        allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        updateToggleBtnText();
+    }
+    function updateToggleBtnText() {
+        let all = document.querySelectorAll('.media-checkbox');
+        let images = document.querySelectorAll('.image-checkbox');
+        let videos = document.querySelectorAll('.video-checkbox');
+        let allBtn = document.getElementById('toggleAllBtn');
+        let imgBtn = document.getElementById('toggleImagesBtn');
+        let vidBtn = document.getElementById('toggleVideosBtn');
+        allBtn.textContent = Array.from(all).every(cb => cb.checked) ? 'Deselect All' : 'Select All';
+        imgBtn.textContent = Array.from(images).every(cb => cb.checked) ? 'Deselect All Images' : 'Select All Images';
+        vidBtn.textContent = Array.from(videos).every(cb => cb.checked) ? 'Deselect All Videos' : 'Select All Videos';
+    }
+    // Update button text on page load and when checkboxes are clicked
+    window.onload = updateToggleBtnText;
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('media-checkbox')) {
+            updateToggleBtnText();
+        }
+    });
+    </script>
+</body>
+</html>

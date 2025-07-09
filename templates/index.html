@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Media Downloader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #405DE6;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: #405DE6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(64, 93, 230, 0.1);
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdeded;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .note {
+            background-color: #f8f9fa;
+            border-left: 4px solid #405DE6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .note h3 {
+            margin-bottom: 10px;
+            color: #405DE6;
+        }
+        .note ul {
+            padding-left: 20px;
+        }
+        .note li {
+            margin-bottom: 8px;
+        }
+        .how-to {
+            margin-top: 30px;
+        }
+        .cookie-info {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+        /* Loading overlay styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .spinner {
+            border: 6px solid #eee;
+            border-top: 6px solid #405DE6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 18px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            font-size: 20px;
+            color: #405DE6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading, please wait...</div>
+    </div>
+    <div class="container">
+        <h1>Instagram Media Downloader</h1>
+        
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST" onsubmit="showLoading()">
+            <div class="form-group">
+                <label for="username">Instagram Username or URL:</label>
+                <input type="text" id="username" name="username" placeholder="e.g., instagram or https://www.instagram.com/instagram/" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="cookie">Session Cookie (Optional - for private accounts):</label>
+                <textarea id="cookie" name="cookie" placeholder="Paste your session cookie here..."></textarea>
+                <div class="cookie-info">
+                    To get your session cookie: Log in to Instagram in your browser, open Developer Tools (F12), 
+                    go to Application > Cookies, and copy the value of the "sessionid" cookie.
+                </div>
+            </div>
+            
+            <button type="submit" class="btn">Download Media</button>
+        </form>
+        
+        <div class="note">
+            <h3>Important Notes:</h3>
+            <ul>
+                <li>This tool only works for public accounts unless you provide a valid session cookie</li>
+                <li>We only download and display low-quality previews of images (videos not supported)</li>
+                <li>Downloaded media is stored temporarily and will be cleared periodically</li>
+                <li>Respect privacy and copyright laws - only download content you have permission to access</li>
+            </ul>
+        </div>
+        
+        <div class="how-to">
+            <h3>How to Use:</h3>
+            <ol>
+                <li>Enter an Instagram username or profile URL</li>
+                <li>Optionally provide your session cookie for private accounts</li>
+                <li>Click "Download Media" to fetch the latest images</li>
+                <li>View low-quality previews on the results page</li>
+            </ol>
+        </div>
+    </div>
+    <script>
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+    window.onload = function() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+    </script>
+</body>
+</html>
